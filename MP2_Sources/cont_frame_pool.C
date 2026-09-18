@@ -109,8 +109,19 @@
 /* DATA STRUCTURES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+ContFramePool::FrameState ContFramePool::get_state(unsigned long _frame_no){
+	unsigned char mask = 0x03; 
+	unsigned char state = bitmap[_frame_no] & 0x03; 
+	return static_cast<ContFramePool::FrameState>(state);
+}
 
+void ContFramePool::set_state(unsigned long _frame_no, FrameState _state){
+	unsigned char mask = 0x03; //use _frame_no for this later...  
+	unsigned char* position = bitmap + _frame_no; 
+	*position = (*position & ~mask) | static_cast<unsigned char>(_state);
+	
+}
+    
 /*--------------------------------------------------------------------------*/
 /* CONSTANTS */
 /*--------------------------------------------------------------------------*/
@@ -131,17 +142,51 @@ ContFramePool::ContFramePool(unsigned long _base_frame_no,
                              unsigned long _n_frames,
                              unsigned long _info_frame_no)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
-    Console::puts("ContframePool::Constructor not implemented!\n");
-    assert(false);
+	base_frame_no = _base_frame_no; 
+	info_frame_no = _info_frame_no; 
+	nFreeFrames = _n_frames;
+	nFrames = _n_frames; 
+	nInfoFrames = needed_info_frames(nFrames);
+	if(_info_frame_no == 0){
+		bitmap = (unsigned char*) (_base_frame_no * FRAME_SIZE); 
+	}else{
+		bitmap = (unsigned char*) (_info_frame_no * FRAME_SIZE);
+	}
+	for(int fno = 0;fno < nFrames;fno++){
+		set_state(fno, FrameState::Free); 
+	}
+	if(_info_frame_no == 0){
+		for(int fno = 0;fno < nInfoFrames;fno++){
+			set_state(_base_frame_no + fno, FrameState::Used); 
+		}
+		nFreeFrames -= nInfoFrames;; 
+	}
+	Console::puts("ContframePool initialized"); 
 }
 
 unsigned long ContFramePool::get_frames(unsigned int _n_frames)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
-    Console::puts("ContframePool::get_frames not implemented!\n");
-    assert(false);
-    return 0;
+    unsigned long l = 0;
+	for(unsigned long r = 0;r < nFrames;r++){
+		FrameState fs = get_state(r);
+		if(fs != FrameState::Free){
+			l = r; 
+			continue;
+		}
+		unsigned long len = r - l + 1; //r-l cannot underflow
+		if(len >= _n_frames){
+			//fill w/ HoS + Used linearly 
+			unsigned long start = l;
+			set_state(start, FrameState::HoS);
+			l++;
+			while(l <= r){
+				set_state(l, FrameState::Used);
+				l++;
+			}
+			return start;
+		}
+	}
+	return 0;
 }
 
 void ContFramePool::mark_inaccessible(unsigned long _base_frame_no,
@@ -162,7 +207,7 @@ void ContFramePool::release_frames(unsigned long _first_frame_no)
 unsigned long ContFramePool::needed_info_frames(unsigned long _n_frames)
 {
     // TODO: IMPLEMENTATION NEEEDED!
-    Console::puts("ContframePool::need_info_frames not implemented!\n");
-    assert(false);
-    return 0;
+    unsigned long bits_per_frame = 8; //2 later
+	unsigned long frames_per_info_frame = (FRAME_SIZE * 8) / bits_per_frame; //frame_size is in bytes
+	return (_n_frames + frames_per_info_frame - 1) / frames_per_info_frame; //(n + d - 1) / d => ceil 
 }
