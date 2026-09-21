@@ -83,6 +83,9 @@ private:
 	unsigned int info_frame_no;
 	unsigned int nInfoFrames; 
 
+	static ContFramePool* head; 
+	ContFramePool* next; 
+
     /* ---- STATE MANAGEMENT */
     
     enum class FrameState {Free, Used, HoS, Inaccessible};
@@ -156,5 +159,7 @@ public:
      Other implementations need a different number of info frames.
      The exact number is computed in this function..
      */
+private:
+	void release_frames_internal(unsigned long _first_frame_no); 
 };
 #endif
