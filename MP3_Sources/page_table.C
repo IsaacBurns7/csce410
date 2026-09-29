@@ -59,6 +59,8 @@ void PageTable::enable_paging()
 	paging_enabled = 1;
 }
 
+//is this all I have left to do (probably 1 hr or less?) 
+	//obviously + report 
 void PageTable::handle_fault(REGS * _r)
 {
   assert(false);

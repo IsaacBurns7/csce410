@@ -1,0 +1,22 @@
+[
+  {
+    "file": "page_table.C",
+    "arguments": [
+      "/opt/homebrew/bin/x86_64-elf-gcc",
+      "-m32",
+      "-fno-builtin",
+      "-fno-exceptions",
+      "-fno-rtti",
+      "-fno-stack-protector",
+      "-fleading-underscore",
+      "-fno-asynchronous-unwind-tables",
+      "-fno-pie",
+      "-c",
+      "-o",
+      "page_table.o",
+      "page_table.C"
+    ],
+    "directory": "/Users/kingisaac/Github/fall2026/csce410/MP3_Sources",
+    "output": "page_table.o"
+  }
+]
