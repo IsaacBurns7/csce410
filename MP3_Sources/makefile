@@ -12,9 +12,9 @@ GCC=x86_64-elf-gcc
 LD=x86_64-elf-ld
 endif
 
-GCC_OPTIONS = -m32 -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-rtti -fno-stack-protector -fleading-underscore -fno-asynchronous-unwind-tables -fno-pie
+GCC_OPTIONS = -m32 -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-rtti -fno-stack-protector -fleading-underscore -fno-asynchronous-unwind-tables -fno-pie -g 
 
-all: kernel.bin
+all: kernel.bin kernel.elf
 
 clean:
 	rm -f *.o *.bin
@@ -94,3 +94,9 @@ kernel.bin: start.o utils.o kernel.o assert.o console.o gdt.o idt.o irq.o except
    gdt.o idt.o irq.o exceptions.o \
    interrupts.o simple_timer.o paging_low.o page_table.o cont_frame_pool.o machine.o \
    machine_low.o
+
+OBJS = start.o utils.o kernel.o assert.o console.o gdt.o idt.o irq.o exceptions.o \
+       interrupts.o simple_timer.o paging_low.o page_table.o cont_frame_pool.o \
+       machine.o machine_low.o
+kernel.elf: $(OBJS)
+	$(LD) -melf_i386 -T linker.ld --oformat elf32-i386 -o kernel.elf $(OBJS)

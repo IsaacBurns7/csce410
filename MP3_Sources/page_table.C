@@ -60,10 +60,43 @@ void PageTable::enable_paging()
 }
 
 //is this all I have left to do (probably 1 hr or less?) 
+	//this is most of MP3 though... ? 
+	//obviously + report 
 	//obviously + report 
 void PageTable::handle_fault(REGS * _r)
 {
-  assert(false);
-  Console::puts("handled page fault\n");
+	if((_r->err_code) & 0x1){
+		Console::puts("PROTECTION FAULT at addr=");
+		Console::putui(read_cr2());
+		Console::puts(" eip=");
+		Console::putui(_r->eip);
+		Console::puts(" err=");
+		Console::putui(_r->err_code);
+		Console::puts("\n");
+		abort();
+	}
+	unsigned long addr = read_cr2();
+	unsigned long PDE_idx = (addr >> 22); 
+	unsigned long PTE_mask = (1 << 10) - 1; 
+	unsigned long PTE_idx = (addr >> 12) & PTE_mask;
+	unsigned long offset_mask = (1 << 12) - 1; 
+	unsigned long offset = addr & offset_mask; 
+	unsigned long *pd = current_page_table->page_directory;
+	//PDE not present - walk PD
+	if(!(pd[PDE_idx] & 0x1)){
+		//create PTP at frame (PDE_idx << 22) + (PTE_idx << 12) 
+		unsigned long PT_frame = kernel_mem_pool->get_frames(1); 
+		unsigned long *new_PT = (unsigned long *) (PT_frame * PAGE_SIZE); //this is direct mapped...
+		for(int i = 0;i < ENTRIES_PER_PAGE; i++){
+			new_PT[i] = 0x2; //R/W, not present, 0x6 if user
+		}
+		pd[PDE_idx] = (PT_frame * PAGE_SIZE) | 0x3; //present, R/W, 0x7 if user 
+	}
+	//PTE not present - walk PT 
+	unsigned long PDE_frame_mask = ((1UL << 20) - 1) << 12; 
+	unsigned long *pt = (unsigned long *) (pd[PDE_idx] & PDE_frame_mask);
+	unsigned long page_frame = process_mem_pool->get_frames(1);
+	pt[PTE_idx] = (page_frame * PAGE_SIZE) | 0x3; //present, R/W 
+  	Console::puts("handled page fault\n");
 }
 
